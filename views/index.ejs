@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="utf-8">
+    <title>Chirper-Group Chat</title>
+    <script src="http://code.jquery.com/jquery-2.1.1.js"></script>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+	<link href='http://fonts.googleapis.com/css?family=Montserrat:400,700|Roboto:400,500,700' rel='stylesheet' type='text/css'>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="/socket.io/socket.io.js"></script>
+   	<script type="text/javascript">
+   		$(document).ready(function(){
+   			io = io.connect();
+   			// get new user's name
+   			//var name = prompt('What is your name?');
+   			$('#login_btn').click(function(){
+   				var name = $('#name').val();
+   				io.emit('got_a_new_user', {name: name});
+   				$("#chat_login").remove();
+   				var box = "<div class='chatbox'><h3>" + name + "</h3><textarea></textarea></div>";
+   				$('#content').append(box).hide().fadeIn('300');
+   			});
+
+        // shows new user to existing users
+   			io.on('new_user', function(data){
+   				//console.log(data);
+   				var box = $("<div id='" + data.id  + "' class='chatbox'><h3>" + data.new_user_name + "</h3><div class='chatbox-content'></div></div>").hide();
+   				$('#content').append(box);
+   				$(box).fadeIn('300');
+   			});
+
+        // shows existing users to new user
+   			io.on('existing_users', function(data){
+   				//console.log(data);
+   				for(user in data) {
+   					var box = $("<div id='" + data[user].id  + "' class='chatbox'><h3>" + data[user].name + "</h3><div class='chatbox-content'></div></div>").hide();
+   					$('#content').append(box);
+   					$(box).fadeIn('300');
+   				}
+   			});
+
+        // removes disconnected user from existing users view
+        io.on('disconnect_user', function(data){
+          $('#' + data.id).fadeOut('300', function() { $(this).remove(); });
+        });
+
+        // send entered type to server
+        $(document).on('keyup', 'textarea' , function(e){
+          // if (e.keyCode == 13){
+            var text = $('textarea').val();
+            //console.log(text);
+            io.emit('updated_text', {text: text});
+            // $('textarea').val(' ');
+          // };
+        });
+
+        // make updated text visible to all clients
+        io.on('text_update', function(data){
+          $('#' + data.id + ' .chatbox-content').html("<p>" + data.text + "</p>")
+        })
+        
+
+    });        
+   	</script>
+</head>
+<body>
+	<header>
+		<div id="header-bar">
+			<h1>chirper<span>chat</span></h1>
+		</div>
+	</header>
+	<div id="content">
+		<h2>Welcome to Group ChirperChat</h2>
+		<div id="chat_login">
+			<p>Type in your name to enter the chatroom<p>
+			<input type="text" id="name">
+			<button id="login_btn" class="btn btn-success">Start chatting</button>
+		</div>
+	</div>
+	<div id="footer">
+		<img id="birds-footer" src="images/birds.png" alt="birds">
+		<p class="copyright">© 2014 - Rand DeCastro. This is a fictitious site meant for educational purposes only.</p>
+	</div>
+
+</body>
+</html>

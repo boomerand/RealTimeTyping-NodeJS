@@ -1,0 +1,64 @@
+ 
+ 1) have the NodeJS server render views/index.ejs that has the html content for the client whenever the client requests '/'.
+
+ 	routes/index.js
+ 		app.get('/', function (req, res) {
+ 			res.render('index', {});
+ 		})
+
+
+ 2) In the client codes, have a javascript code that asks the user for their name and store this user input in a variable called name.
+
+ 	<script>
+ 		var name = prompt('What is your name?');
+ 	</script>
+
+ 3) Have the client EMIT "got_a_new_user" and pass "name" to the server.
+
+ 	<script>
+ 		var name = prompt('What is your name?');
+ 		io = io.connect();
+ 		io.emit('got_a_new_user', {name: name});
+ 	</script>
+
+ 4) Have the server LISTEN for an event called "got_a_new_user". When the event gets triggered, 
+
+ 	4a) Have the server BROADCAST an event called "new_user" to the clients with the name of the new user attached to this event.
+
+	 		app.io.route('got_a_new_user', function(req){
+	 			app.io.broadcast('new_user', {new_user_name: req.data.name}) <-- get name via 
+	 		});
+
+ 	4b) We store the name/session_id of the new user in a variable/array/hash called "users",
+
+ 			var users = {}; <-- add users data to hash
+
+ 	4c) To the person who sent the request, we EMIT an event called 'existing_users' with all the users' data.
+
+ 			app.io.route('got_a_new_user', function(req){
+ 				app.io.broadcast('new_user', {new_user_name: req.data.name});
+ 				req.io.emit('existing_users', users)
+ 			});
+
+
+ 5) Have the client LISTEN for an event called "new_user" and when this event gets triggered, have jQuery render a new box with the new user's name.
+
+ 	<script>
+ 		var name = prompt('What is your name?');
+ 		io = io.connect();
+ 		io.emit('got_a_new_user', {name: name});
+
+ 		io.on('new_user', function(data){
+ 			//render this new info in the HTML
+ 		})
+ 	</script>
+
+ 6) When the client updates the text box in the html (say id of 'my_box'), have the client EMIT an event called 'updated_text' to the server, and attach the value of my_box with the event.
+
+ 7) Have the server LISTEN for an event called 'updated_text' and when this event gets triggered, BROADCAST to everyone (except the person who triggered the request) an event called 'text_update" (and attach the value of new text)
+
+ 8) Have the client LISTEN for an event called 'text_update" and when this event gets triggered, update the HTML text of the user that the text was updated for.
+
+ 9) Have the server LISTEN for an event called "disconnect", and when this occurs, BROADCAST to all the clients an event called "disconnect_user" with some data (name of the disconnected user) (NOTE: we'll probably need to pass sessionID or something else to identify a user).
+
+ 10) Have the client LISTEN for an event called "disconnect_user". When this event is triggered, have the client remove the proper jQuery box. 
